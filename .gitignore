@@ -1,0 +1,9 @@
+*.swp
+*.stash
+*.o
+*.so
+*.dylib
+meactl
+debug/*
+release/*
+Makefile*

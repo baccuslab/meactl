@@ -19,6 +19,16 @@ MeactlWindow::MeactlWindow(QWidget* parent) :
 			this, &MeactlWindow::handleSourceCreated);
 	QObject::connect(controller, &MeactlWidget::sourceDeleted,
 			this, &MeactlWindow::handleSourceDeleted);
+	QObject::connect(controller, &MeactlWidget::serverConnectionCanceled,
+			this, &MeactlWindow::handleServerConnectionCanceled);
+	QObject::connect(controller, &MeactlWidget::recordingStarted,
+			this, &MeactlWindow::handleRecordingStarted);
+	QObject::connect(controller, &MeactlWidget::recordingStopped,
+			this, &MeactlWindow::handleRecordingStopped);
+	QObject::connect(controller, &MeactlWidget::recordingDirectoryChanged,
+			this, &MeactlWindow::handleSaveDirectoryChanged);
+	QObject::connect(controller, &MeactlWidget::recordingFilenameChanged,
+			this, &MeactlWindow::handleSaveFilenameChanged);
 
 	setCentralWidget(controller);
 	statusBar()->showMessage("Ready", StatusMessageTimeout);
@@ -78,6 +88,18 @@ void MeactlWindow::handleRecordingStopped(bool success, const QString& msg)
 void MeactlWindow::handleSaveDirectoryChanged(const QString& dir)
 {
 	statusBar()->showMessage(QString("Save directory set to %1").arg(dir), 
+			StatusMessageTimeout);
+}
+
+void MeactlWindow::handleServerConnectionCanceled()
+{
+	statusBar()->showMessage("Pending connection to BLDS canceled", 
+			StatusMessageTimeout);
+}
+
+void MeactlWindow::handleSaveFilenameChanged(const QString& name)
+{
+	statusBar()->showMessage("Recording filename set to " + name,
 			StatusMessageTimeout);
 }
 

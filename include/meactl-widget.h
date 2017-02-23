@@ -13,15 +13,33 @@
 #include <QtCore>
 #include <QtWidgets>
 
+/*! \class MeactlWidget
+ *
+ * The MeactlWidget class is the main object within the `meactl` application.
+ * It provides widgets and functionality for graphically connecting to the
+ * BLDS, manipulating the data source, and starting and stopping recordings
+ * of specified lengths.
+ */
 class MeactlWidget : public QWidget {
 	Q_OBJECT
 
+		/*! The time in milliseconds at which the application performs
+		 * periodic checks that the recording and source still exist.
+		 */
 		const int RecordingPositionUpdateInterval = 1000;
 
 	public:
+
+		/*! Construct a MeactlWidget
+		 *
+		 * \param parent The parent widget.
+		 */
 		MeactlWidget(QWidget* parent = nullptr);
+
+		/*! Destroy a MeactlWidget. */
 		~MeactlWidget();
 
+		/* Copying is not allowed. */
 		MeactlWidget(const MeactlWidget&) = delete;
 		MeactlWidget(MeactlWidget&&) = delete;
 		MeactlWidget& operator=(const MeactlWidget&) = delete;
@@ -120,14 +138,13 @@ class MeactlWidget : public QWidget {
 		/*! Choose a directory in which to save a recording. */
 		void chooseRecordingDirectory();
 
-		/*! Slot called to handle the heartbeat requests for the server's status.
-		 *
-		 * \param json The JSON object containing the server's status.
-		 */
-		void handleRecordingStatusReply(const QJsonObject& json);
-
 		/*! Slot called to cancel a pending connection to the BLDS. */
 		void cancelPendingServerConnection();
+
+		/*! Slot called upon receipt of periodic replies for the recording
+		 * status, e.g., whether or not it still exists.
+		 */
+		void handleRecordingExistsReply(bool exists);
 
 	signals:
 
@@ -179,6 +196,14 @@ class MeactlWidget : public QWidget {
 		 * \param msg If the request failed, this contains an error message.
 		 */
 		void recordingStopped(bool success, const QString& msg);
+
+		/*! Emitted when a pending request to connect to the BLDS is canceled. */
+		void serverConnectionCanceled();
+
+		/*! Emitted when the recording filename is successfully changed,
+		 * with the new name.
+		 */
+		void recordingFilenameChanged(const QString& name);
 
 	private:
 
@@ -295,7 +320,7 @@ class MeactlWidget : public QWidget {
 		QLabel* recordingFileLabel;
 
 		/*! Shows current file to which data is saved. */
-		QLineEdit* recordingFile;
+		QLineEdit* recordingFileLine;
 
 		/*! Button for setting the path to the recording file. */
 		QPushButton* recordingPathButton;
@@ -310,6 +335,16 @@ class MeactlWidget : public QWidget {
 		 * server/source
 		 */
 		QTimer* recordingStatusTimer;
+
+		/*! Storage for connection objects used for later cleanup.
+		 * 
+		 * Throughout this class's implementation, functors are connected
+		 * to various signals (rather than standalone class methods). Sometimes
+		 * multiple functors are connected to the same slot. This method
+		 * stores connections, so that specific connections can be removed
+		 * later, without removing all of those for the given slot.
+		 */
+		QMap<QString, QMetaObject::Connection> connections;
 };
 
 #endif

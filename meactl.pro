@@ -10,11 +10,12 @@ INCLUDEPATH += . \
 	../libblds-client/include \
 	/usr/local/include
 
-QT += gui widgets network
+QT += gui widgets network charts
 CONFIG += c++11 debug_and_release
 CONFIG -= app_bundle
 
-LIBS += -L../libblds-client/lib -lblds-client
+LIBS += -L../libblds-client/lib -lblds-client \
+	-L/usr/local/lib -lhdf5_cpp -lhdf5
 
 QMAKE_RPATHDIR += ../libblds-client/lib \
 	../libdata-source/lib \
@@ -26,5 +27,5 @@ HEADERS += include/meactl-window.h \
 		include/meactl-widget.h
 SOURCES += src/meactl-window.cc \
 		src/source-settings-window.cc \
-		src/meactl-widget.cc \
+		src/meactl-widget.cc \ 
 		src/main.cc

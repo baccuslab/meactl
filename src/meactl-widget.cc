@@ -8,6 +8,8 @@
 
 #include "meactl-widget.h"
 
+#include "source-settings-window.h"
+
 MeactlWidget::MeactlWidget(QWidget* parent) :
 	QWidget(parent)
 {
@@ -110,6 +112,8 @@ void MeactlWidget::initSignals()
 {
 	QObject::connect(connectToServerButton, &QPushButton::clicked,
 			this, &MeactlWidget::connectToServer);
+	QObject::connect(showSettingsButton, &QPushButton::clicked,
+			this, &MeactlWidget::showSettingsWindow);
 }
 
 void MeactlWidget::connectToServer()
@@ -181,16 +185,35 @@ void MeactlWidget::handleServerConnection()
 			this, &MeactlWidget::chooseRecordingDirectory);
 
 	/* Connect functor for sending a new recording filename. */
-	QObject::connect(recordingFileLine, &QLineEdit::editingFinished,
+	QObject::connect(recordingFileLine, &QLineEdit::returnPressed,
 			[this]() -> void {
 				client->set("save-file", recordingFileLine->text());
 			});
 	recordingPathButton->setEnabled(true);
 
 	/* Connect functor for handling a response to a request
-	 * to change the save filename.
+	 * to change the length of a recording.
 	 */
 	recordingLengthLine->setEnabled(true);
+	connections.insert("recording-length-response",
+			QObject::connect(client, &BldsClient::setResponse,
+			[this](const QString& param, bool success, const QString& msg) -> void {
+				if (param != "recording-length") {
+					return;
+				}
+				if (success) {
+					emit recordingLengthChanged(recordingLengthLine->text());
+				} else {
+					QMessageBox::warning(parentWidget(), 
+							"Could not change recording length",
+							"An error occurred changing the recording length: " + msg);
+				}
+			})
+	);
+
+	/* Connect functor for handling a response to a request
+	 * to change the save filename.
+	 */
 	recordingFileLine->setEnabled(true);
 	connections.insert("recording-filename-response",
 			QObject::connect(client, &BldsClient::setResponse,
@@ -217,6 +240,7 @@ void MeactlWidget::handleServerConnection()
 
 void MeactlWidget::onServerError(const QString& err)
 {
+	handleServerDisconnection();
 	client->deleteLater();
 	QMessageBox::critical(parentWidget(), "Server error", 
 			"An error occurred communicating with the BLDS:\n\n" + err);
@@ -243,9 +267,9 @@ void MeactlWidget::handleServerDisconnection()
 	QObject::disconnect(recordingPathButton, &QPushButton::clicked,
 			this, &MeactlWidget::chooseRecordingDirectory);
 	QObject::disconnect(createSourceButton, &QPushButton::clicked, 0, 0);
-	QObject::disconnect(recordingLengthLine, &QLineEdit::editingFinished, 0, 0);
+	QObject::disconnect(recordingLengthLine, &QLineEdit::returnPressed, 0, 0);
 	QObject::disconnect(startRecordingButton, &QPushButton::clicked, 0, 0);
-	QObject::disconnect(recordingFileLine, &QLineEdit::editingFinished, 0, 0);
+	QObject::disconnect(recordingFileLine, &QLineEdit::returnPressed, 0, 0);
 	QObject::disconnect(showSettingsButton, &QPushButton::clicked, 0, 0);
 
 	/* Remove any residual other functors. */
@@ -258,7 +282,7 @@ void MeactlWidget::handleServerDisconnection()
 			this, &MeactlWidget::connectToServer);
 
 	/* Disconnect functor for manipulating the recording filename. */
-	QObject::disconnect(recordingFileLine, &QLineEdit::editingFinished, 0, 0);
+	QObject::disconnect(recordingFileLine, &QLineEdit::returnPressed, 0, 0);
 	if (connections.contains("recording-filename-response"))
 		QObject::disconnect(connections.take("recording-filename-response"));
 
@@ -280,7 +304,9 @@ void MeactlWidget::handleServerDisconnection()
 
 void MeactlWidget::createDataSource()
 {
-	client->createSource(sourceTypeBox->currentText(), sourceLocationLine->text());
+	auto type = sourceTypeBox->currentText();
+	auto location = (type == "mcs") ? "" : sourceLocationLine->text();
+	client->createSource(type, location);
 }
 
 void MeactlWidget::onSourceCreated(bool success, const QString& msg)
@@ -375,7 +401,6 @@ void MeactlWidget::handleRecordingStarted()
 	/* Disable starting the recording, and enable stopping it. */
 	QObject::disconnect(startRecordingButton, &QPushButton::clicked,
 			this, &MeactlWidget::startRecording);
-	QObject::disconnect(recordingLengthLine, &QLineEdit::editingFinished, 0, 0);
 	recordingLengthLine->setReadOnly(true);
 	recordingFileLine->setReadOnly(true);
 	QObject::connect(startRecordingButton, &QPushButton::clicked,
@@ -387,6 +412,8 @@ void MeactlWidget::handleRecordingStarted()
 	 * may have changed it and it changes each time a recording
 	 * is started/stopped unless the client explicitly sets it.
 	 */
+	if (connections.contains("recording-filename-response"))
+		QObject::disconnect(connections.take("recording-filename-response"));
 	connections.insert("recording-filename-response",
 			QObject::connect(client, &BldsClient::getResponse,
 			[this](const QString& param, bool, const QVariant& data) -> void {
@@ -428,18 +455,37 @@ void MeactlWidget::handleRecordingStopped()
 		QObject::disconnect(connections.take("recording-exists-connection"));
 	if (connections.contains("recording-position-connections"))
 		QObject::disconnect(connections.take("recording-position-connections"));
-
-	/* Reconnect setting the length of the recording. */
 	QObject::disconnect(startRecordingButton, &QPushButton::clicked,
 			this, &MeactlWidget::stopRecording);
+
+	/* Re-enable setting the length of the recording. The signal has
+	 * already been connected, just make it editable.
+	 */
 	recordingLengthLine->setReadOnly(false);
-	recordingFileLine->setReadOnly(false);
-	QObject::connect(recordingLengthLine, &QLineEdit::editingFinished,
-			this, [this]() -> void {
-				client->set("recording-length", 
-						recordingLengthLine->text().toInt());
-			});
 	recordingPositionLine->setText("0");
+
+	/* Reconnect setting the filename. Here we reconnect the signal
+	 * because when starting a recording a different one is connected
+	 * in case other clients set the filename before we start.
+	 */
+	recordingFileLine->setReadOnly(false);
+	if (connections.contains("recording-filename-response"))
+		QObject::disconnect(connections.take("recording-filename-response"));
+	connections.insert("recording-filename-response",
+			QObject::connect(client, &BldsClient::setResponse,
+			[this](const QString& param, bool success, const QString& msg) -> void {
+				if (param != "save-file") {
+					return;
+				}
+				if (success) {
+					emit recordingFilenameChanged(recordingFileLine->text());
+				} else {
+					QMessageBox::warning(parentWidget(), "Could not set filename",
+							"The recording filename could not be set. " + msg);
+				}
+			})
+	);
+
 
 	/* Re-enable starting the recording. */
 	QObject::connect(startRecordingButton, &QPushButton::clicked,
@@ -469,11 +515,7 @@ void MeactlWidget::setRecordingFilename(const QString& name)
 		client->set("save-file", name);
 }
 
-void MeactlWidget::chooseAnalogOutput()
-{
-}
-
-void MeactlWidget::handleInitialStatusReply(const QJsonObject& json)
+void MeactlWidget::handleInitialStatusReply(QJsonObject json)
 {
 	/* Determine basic information about the server and source. */
 	auto sourceExists = json["source-exists"].toBool();
@@ -535,7 +577,7 @@ void MeactlWidget::handleInitialStatusReply(const QJsonObject& json)
 
 			/* Show current final length of the recording, enable changing it. */
 			recordingLengthLine->setText(QString("%1").arg(length));
-			QObject::connect(recordingLengthLine, &QLineEdit::editingFinished,
+			QObject::connect(recordingLengthLine, &QLineEdit::returnPressed,
 					onLengthUpdate);
 
 			/* Enable starting the recording. */
@@ -554,7 +596,7 @@ void MeactlWidget::handleInitialStatusReply(const QJsonObject& json)
 
 		/* Set recording length and enable changing it. */
 		recordingLengthLine->setText(QString("%1").arg(length));
-		QObject::connect(recordingLengthLine, &QLineEdit::editingFinished,
+		QObject::connect(recordingLengthLine, &QLineEdit::returnPressed,
 				onLengthUpdate);
 	}
 }
@@ -681,5 +723,21 @@ void MeactlWidget::cancelPendingServerConnection()
 		QObject::disconnect(client, 0, 0, 0);
 		client->deleteLater();
 	}
+}
+
+void MeactlWidget::showSettingsWindow()
+{
+	if (!client)
+		return;
+	auto win = new SourceSettingsWindow(client->hostname(), this);
+	QObject::connect(win, &SourceSettingsWindow::adcRangeChanged,
+			this, &MeactlWidget::adcRangeChanged);
+	QObject::connect(win, &SourceSettingsWindow::configurationChanged,
+			this, &MeactlWidget::configurationChanged);
+	QObject::connect(win, &SourceSettingsWindow::analogOutputChanged,
+			this, &MeactlWidget::analogOutputChanged);
+	QObject::connect(win, &SourceSettingsWindow::triggerChanged,
+			this, &MeactlWidget::triggerChanged);
+	win->show();
 }
 

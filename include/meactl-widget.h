@@ -79,11 +79,6 @@ class MeactlWidget : public QWidget {
 		 */
 		void setRecordingFilename(const QString& file);
 
-		/*! Open a dialog to select an analog output file, and send the encoded
-		 * signal to the BLDS.
-		 */
-		void chooseAnalogOutput();
-
 		/*! Slot called when a connection to the server completes or fails.
 		 * 
 		 * \param made True if the connection succeeded, else false.
@@ -133,7 +128,7 @@ class MeactlWidget : public QWidget {
 		 *
 		 * \param json The response data containing the server's status.
 		 */
-		void handleInitialStatusReply(const QJsonObject& json);
+		void handleInitialStatusReply(QJsonObject json);
 
 		/*! Choose a directory in which to save a recording. */
 		void chooseRecordingDirectory();
@@ -145,6 +140,11 @@ class MeactlWidget : public QWidget {
 		 * status, e.g., whether or not it still exists.
 		 */
 		void handleRecordingExistsReply(bool exists);
+
+		/*! Slot called to show the settings for the source and
+		 * change them.
+		 */
+		void showSettingsWindow();
 
 	signals:
 
@@ -166,14 +166,14 @@ class MeactlWidget : public QWidget {
 		/*! Emitted upon receipt of a response to a request to create a data source.
 		 *
 		 * \param success True if the request succeeded, else false.
-		 * \param If the request failed, this contains an error message.
+		 * \param msg If the request failed, this contains an error message.
 		 */
 		void sourceCreated(bool success, const QString& msg);
 
 		/*! Emitted upon receipt of a response to a request to delete a data source.
 		 *
 		 * \param success True if the request succeeded, else false.
-		 * \param If the request failed, this contains an error message.
+		 * \param msg If the request failed, this contains an error message.
 		 */
 		void sourceDeleted(bool success, const QString& msg);
 
@@ -204,6 +204,21 @@ class MeactlWidget : public QWidget {
 		 * with the new name.
 		 */
 		void recordingFilenameChanged(const QString& name);
+
+		/*! Emitted when the length of the recording changes. */
+		void recordingLengthChanged(const QString& len);
+
+		/*! Emitted when the trigger is changed. */
+		void triggerChanged(const QString& trigger);
+
+		/*! Emitted when the ADC range is changed. */
+		void adcRangeChanged(double range);
+
+		/*! Emitted when the analog output is set from a file. */
+		void analogOutputChanged(const QString& file);
+
+		/*! Emitted when the configuration is set from a file. */
+		void configurationChanged(const QString& config);
 
 	private:
 
@@ -250,6 +265,9 @@ class MeactlWidget : public QWidget {
 		 * to a successful stop to a recording.
 		 */
 		void handleRecordingStopped();
+
+		/* Setup signals/slots needed to create the source settings window. */
+		void setupSettingsWindow();
 
 		/*! Main widget layout. */
 		QGridLayout* mainLayout;

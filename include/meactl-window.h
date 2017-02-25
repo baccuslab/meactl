@@ -86,6 +86,9 @@ class MeactlWindow : public QMainWindow {
 		 */
 		void handleSaveFilenameChanged(const QString& name);
 
+		/*! Slot called when the recording length changes. */
+		void handleRecordingLengthChanged(const QString& name);
+
 		/*! Slot called when the directory in which data is saved changes.
 		 *
 		 * \param name The name of the new directory.
@@ -94,6 +97,18 @@ class MeactlWindow : public QMainWindow {
 
 		/*! Slot called when a pending connection to the BLDS is canceled. */
 		void handleServerConnectionCanceled();
+
+		/*! Slot called when ADC range is changed. */
+		void handleAdcRangeChanged(double range);
+
+		/*! Slot called when configuration of chip is changed. */
+		void handleConfigurationChanged(const QString& file);
+
+		/*! Slot called when analog output is changed. */
+		void handleAnalogOutputChanged(const QString& file);
+
+		/*! Slot called when triggering mechanism is changed. */
+		void handleTriggerChanged(const QString& trigger);
 
 	private:
 

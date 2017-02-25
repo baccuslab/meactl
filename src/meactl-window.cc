@@ -29,7 +29,18 @@ MeactlWindow::MeactlWindow(QWidget* parent) :
 			this, &MeactlWindow::handleSaveDirectoryChanged);
 	QObject::connect(controller, &MeactlWidget::recordingFilenameChanged,
 			this, &MeactlWindow::handleSaveFilenameChanged);
+	QObject::connect(controller, &MeactlWidget::recordingLengthChanged,
+			this, &MeactlWindow::handleRecordingLengthChanged);
+	QObject::connect(controller, &MeactlWidget::adcRangeChanged,
+			this, &MeactlWindow::handleAdcRangeChanged);
+	QObject::connect(controller, &MeactlWidget::analogOutputChanged,
+			this, &MeactlWindow::handleAnalogOutputChanged);
+	QObject::connect(controller, &MeactlWidget::configurationChanged,
+			this, &MeactlWindow::handleConfigurationChanged);
+	QObject::connect(controller, &MeactlWidget::triggerChanged,
+			this, &MeactlWindow::handleTriggerChanged);
 
+	setWindowTitle("MEA controller");
 	setCentralWidget(controller);
 	statusBar()->showMessage("Ready", StatusMessageTimeout);
 }
@@ -103,4 +114,34 @@ void MeactlWindow::handleSaveFilenameChanged(const QString& name)
 			StatusMessageTimeout);
 }
 
+void MeactlWindow::handleRecordingLengthChanged(const QString& len)
+{
+	statusBar()->showMessage("Recording length changed to " + len,
+			StatusMessageTimeout);
+}
+
+void MeactlWindow::handleAdcRangeChanged(double range)
+{
+	statusBar()->showMessage("ADC range changed to " + 
+			QString::number(range, 'f', 1), StatusMessageTimeout);
+}
+
+void MeactlWindow::handleConfigurationChanged(const QString& file)
+{
+	statusBar()->showMessage("Configuration read from " + file,
+			StatusMessageTimeout);
+}
+
+void MeactlWindow::handleAnalogOutputChanged(const QString& file)
+{
+	statusBar()->showMessage(( (file.size() == 0) ?
+			"Analog output cleared" : "Analog output read from " + file),
+			StatusMessageTimeout);
+}
+
+void MeactlWindow::handleTriggerChanged(const QString& trigger)
+{
+	statusBar()->showMessage("Trigger set to " + trigger, 
+			StatusMessageTimeout);
+}
 

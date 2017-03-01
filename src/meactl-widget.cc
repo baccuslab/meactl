@@ -468,6 +468,7 @@ void MeactlWidget::handleRecordingStopped()
 	 * in case other clients set the filename before we start.
 	 */
 	recordingFileLine->setReadOnly(false);
+	recordingFileLine->setText("");
 	if (connections.contains("recording-filename-response"))
 		QObject::disconnect(connections.take("recording-filename-response"));
 	connections.insert("recording-filename-response",

@@ -39,7 +39,7 @@ MeactlWindow::MeactlWindow(QWidget* parent) :
 			this, &MeactlWindow::handleConfigurationChanged);
 	QObject::connect(controller, &MeactlWidget::triggerChanged,
 			this, &MeactlWindow::handleTriggerChanged);
-	QObject::connect(controller, &MeactlWidget::triggerChanged,
+	QObject::connect(controller, &MeactlWidget::plugChanged,
 			this, &MeactlWindow::handlePlugChanged);
 
 	setWindowTitle("MEA controller");

@@ -10,11 +10,19 @@ INCLUDEPATH += . \
 	../libblds-client/include \
 	/usr/local/include
 
+linux {
+	INCLUDEPATH += /usr/include/hdf5/serial
+}
+
 QT += gui widgets network 
 CONFIG += c++11 debug_and_release
 CONFIG -= app_bundle
 
 LIBS += -L../libblds-client/lib -L/usr/local/lib 
+
+linux {
+	LIBS += -L/usr/lib/x86_64-linux-gnu/hdf5/serial
+}
 
 QMAKE_RPATHDIR += ../libblds-client/lib \
 	../libdata-source/lib \

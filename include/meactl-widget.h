@@ -214,6 +214,9 @@ class MeactlWidget : public QWidget {
 		/*! Emitted when the ADC range is changed. */
 		void adcRangeChanged(double range);
 
+		/*! Emitted when a new Neurolizer plug has been successfully set. */
+		void plugChanged(const QString& plug);
+
 		/*! Emitted when the analog output is set from a file. */
 		void analogOutputChanged(const QString& file);
 

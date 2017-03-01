@@ -61,6 +61,8 @@ class SourceSettingsWindow : public QWidget {
 		 */
 		void triggerChanged(const QString& trigger);
 
+		void plugChanged(const QString& plug);
+
 	private slots:
 
 		/* Open a dialog box for selecting a configuration, and send 
@@ -96,6 +98,8 @@ class SourceSettingsWindow : public QWidget {
 		/* Slot called which simply clears analog output. */
 		void clearAnalogOutput();
 
+		void onPlugChanged(const QString& plug);
+
 	private:
 
 		/* Method which actually reads data from the given file. */
@@ -112,14 +116,17 @@ class SourceSettingsWindow : public QWidget {
 		/*! Labels the ADC range spin box. */
 		QLabel* adcRangeLabel;
 
+		/*! Shows the actual ADC range. */
+		QDoubleSpinBox* adcRangeBox;
+
 		/*! Labels the selected trigger. */
 		QLabel* triggerLabel;
 
 		/*! List of allowed triggers, and shows the current one. */
 		QComboBox* triggerBox;
 
-		/*! Shows the actual ADC range. */
-		QDoubleSpinBox* adcRangeBox;
+		QLabel* plugLabel;
+		QComboBox* plugBox;
 
 		/*! Labels the configuration line. */
 		QLabel* configurationLabel;
@@ -130,7 +137,6 @@ class SourceSettingsWindow : public QWidget {
 
 		/*! Button to bring up dialog for selecting new file. */
 		QPushButton* chooseConfigurationButton;
-
 
 		QLabel* analogOutputLabel;
 		QLineEdit* analogOutputLine;

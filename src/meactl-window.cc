@@ -39,6 +39,8 @@ MeactlWindow::MeactlWindow(QWidget* parent) :
 			this, &MeactlWindow::handleConfigurationChanged);
 	QObject::connect(controller, &MeactlWidget::triggerChanged,
 			this, &MeactlWindow::handleTriggerChanged);
+	QObject::connect(controller, &MeactlWidget::triggerChanged,
+			this, &MeactlWindow::handlePlugChanged);
 
 	setWindowTitle("MEA controller");
 	setCentralWidget(controller);
@@ -142,6 +144,12 @@ void MeactlWindow::handleAnalogOutputChanged(const QString& file)
 void MeactlWindow::handleTriggerChanged(const QString& trigger)
 {
 	statusBar()->showMessage("Trigger set to " + trigger, 
+			StatusMessageTimeout);
+}
+
+void MeactlWindow::handlePlugChanged(const QString& plug)
+{
+	statusBar()->showMessage(QString("Neurolizer plug %1 selected").arg(plug),
 			StatusMessageTimeout);
 }
 

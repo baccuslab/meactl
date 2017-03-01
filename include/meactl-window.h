@@ -110,6 +110,9 @@ class MeactlWindow : public QMainWindow {
 		/*! Slot called when triggering mechanism is changed. */
 		void handleTriggerChanged(const QString& trigger);
 
+		/*! Slot called when the Neurolizer plug is changed. */
+		void handlePlugChanged(const QString& plug);
+
 	private:
 
 		/* The actual controller widget, which does all the work. */

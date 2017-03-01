@@ -270,7 +270,6 @@ void MeactlWidget::handleServerDisconnection()
 	QObject::disconnect(recordingLengthLine, &QLineEdit::returnPressed, 0, 0);
 	QObject::disconnect(startRecordingButton, &QPushButton::clicked, 0, 0);
 	QObject::disconnect(recordingFileLine, &QLineEdit::returnPressed, 0, 0);
-	QObject::disconnect(showSettingsButton, &QPushButton::clicked, 0, 0);
 
 	/* Remove any residual other functors. */
 	for (auto& each : connections)
@@ -738,6 +737,8 @@ void MeactlWidget::showSettingsWindow()
 			this, &MeactlWidget::analogOutputChanged);
 	QObject::connect(win, &SourceSettingsWindow::triggerChanged,
 			this, &MeactlWidget::triggerChanged);
+	QObject::connect(win, &SourceSettingsWindow::plugChanged,
+			this, &MeactlWidget::plugChanged);
 	win->show();
 }
 

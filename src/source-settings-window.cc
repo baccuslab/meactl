@@ -34,6 +34,11 @@ SourceSettingsWindow::SourceSettingsWindow(const QString& hostname,
 	setupLayout();
 	setWindowTitle("Source settings");
 	setAttribute(Qt::WA_DeleteOnClose);
+
+	/* Move just below parent widget. */
+	auto upperLeft = parentWidget()->pos();
+	auto rect = parentWidget()->frameGeometry();
+	move(upperLeft.x(), upperLeft.y() + rect.height());
 }
 
 SourceSettingsWindow::~SourceSettingsWindow()
@@ -60,6 +65,14 @@ void SourceSettingsWindow::setupLayout()
 	triggerBox->addItems( {"none", "photodiode"} );
 	triggerBox->setToolTip("Start trigger for recordings");
 
+	plugLabel = new QLabel("Plug:", this);
+	plugLabel->setAlignment(Qt::AlignRight);
+	plugBox = new QComboBox(this);
+	for (auto i = 0; i < 5; i++) {
+		plugBox->addItem(QString::number(i));
+	}
+	plugBox->setToolTip("Choose Neurolizer plug number");
+
 	configurationLabel = new QLabel("Configuration:", this);
 	configurationLabel->setAlignment(Qt::AlignRight);
 	configurationLine = new QLineEdit("", this);
@@ -84,9 +97,11 @@ void SourceSettingsWindow::setupLayout()
 	layout->addWidget(adcRangeBox, 0, 1);
 	layout->addWidget(triggerLabel, 0, 2);
 	layout->addWidget(triggerBox, 0, 3);
+	layout->addWidget(plugLabel, 0, 4);
+	layout->addWidget(plugBox, 0, 5);
 	layout->addWidget(configurationLabel, 1, 0);
-	layout->addWidget(configurationLine, 1, 1, 1, 3);
-	layout->addWidget(chooseConfigurationButton, 1, 4);
+	layout->addWidget(configurationLine, 1, 1, 1, 4);
+	layout->addWidget(chooseConfigurationButton, 1, 5);
 	layout->addWidget(analogOutputLabel, 2, 0);
 	layout->addWidget(analogOutputLine, 2, 1, 1, 3);
 	layout->addWidget(selectAnalogOutputButton, 2, 4);
@@ -105,7 +120,7 @@ void SourceSettingsWindow::chooseConfiguration()
 	QObject::connect(client, &BldsClient::setSourceResponse,
 			this, [this,fname](const QString& param, bool success, 
 					const QString& msg) -> void {
-				if (param != "configuration")
+				if (param != "configuration-file")
 					return;
 				QObject::disconnect(client, &BldsClient::setSourceResponse, 0, 0);
 				if (success) {
@@ -118,7 +133,7 @@ void SourceSettingsWindow::chooseConfiguration()
 			});
 
 	/* Actually make the request */
-	client->setSource("configuration", fname);
+	client->setSource("configuration-file", fname);
 }
 
 void SourceSettingsWindow::handleSourceStatus(bool exists, QJsonObject obj)
@@ -156,6 +171,8 @@ void SourceSettingsWindow::handleSourceStatus(bool exists, QJsonObject obj)
 			this, &SourceSettingsWindow::chooseAnalogOutput);
 	QObject::connect(clearAnalogOutputButton, &QPushButton::clicked,
 			this, &SourceSettingsWindow::clearAnalogOutput);
+	QObject::connect(plugBox, &QComboBox::currentTextChanged,
+			this, &SourceSettingsWindow::onPlugChanged);
 }
 
 void SourceSettingsWindow::chooseAnalogOutput()
@@ -282,5 +299,29 @@ void SourceSettingsWindow::onAnalogOutputChanged(const QString& file,
 
 	/* Actually make the request. */
 	client->setSource("analog-output", QVariant::fromValue(aout));
+}
+
+void SourceSettingsWindow::onPlugChanged(const QString& plug)
+{
+	/* Connect functor handling response to request to set
+	 * the plug number.
+	 */
+	QObject::connect(client, &BldsClient::setSourceResponse,
+			this, [this,plug](const QString& param, bool valid, 
+					const QString& msg) -> void {
+				if (param != "plug")
+					return;
+				QObject::disconnect(client, &BldsClient::setSourceResponse, 0, 0);
+				if (valid) {
+					emit plugChanged(plug);
+				} else {
+					QMessageBox::warning(this, "Could not select plug",
+							QString("The Neurolizer plug could not "
+							"be selected: %1").arg(msg));
+				}
+			});
+
+	/* Actually make the request. */
+	client->setSource("plug", static_cast<quint32>(plug.toInt()));
 }
 

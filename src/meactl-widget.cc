@@ -146,6 +146,7 @@ void MeactlWidget::onServerConnection(bool made)
 		serverHostLine->setReadOnly(false);
 		QObject::connect(connectToServerButton, &QPushButton::clicked,
 				this, &MeactlWidget::connectToServer);
+		connectToServerButton->setText("Connect");
 		client->deleteLater();
 	}
 

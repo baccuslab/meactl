@@ -120,7 +120,7 @@ void SourceSettingsWindow::chooseConfiguration()
 	QObject::connect(client, &BldsClient::setSourceResponse,
 			this, [this,fname](const QString& param, bool success, 
 					const QString& msg) -> void {
-				if (param != "configuration-file")
+				if (!param.startsWith("configuration"))
 					return;
 				QObject::disconnect(client, &BldsClient::setSourceResponse, 0, 0);
 				if (success) {

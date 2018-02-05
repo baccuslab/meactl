@@ -114,6 +114,16 @@ void MeactlWidget::initSignals()
 			this, &MeactlWidget::connectToServer);
 	QObject::connect(showSettingsButton, &QPushButton::clicked,
 			this, &MeactlWidget::showSettingsWindow);
+
+	/* Simple handler to auto-populate the location line. */
+	QObject::connect(sourceTypeBox, &QComboBox::currentTextChanged,
+			this, [this](const QString& type) -> void {
+				if (type == "hidens") {
+					sourceLocationLine->setText("localhost");
+				} else {
+					sourceLocationLine->clear();
+				}
+			});
 }
 
 void MeactlWidget::connectToServer()
